@@ -1,0 +1,72 @@
+version: 0.2
+
+env:
+  variables:
+      ECR_REPO_NAME: "aws-webinar-demo-gitops"
+     # key: "value"
+  #parameter-store:
+     # key: "value"
+     # key: "value"
+  #secrets-manager:
+     # key: secret-id:json-key:version-stage:version-id
+     # key: secret-id:json-key:version-stage:version-id
+  #exported-variables:
+     # - variable
+     # - variable
+  #git-credential-helper: yes
+#batch:
+  #fast-fail: true
+  #build-list:
+  #build-matrix:
+  #build-graph:
+phases:
+  #install:
+    #If you use the Ubuntu standard image 2.0 or later, you must specify runtime-versions.
+    #If you specify runtime-versions and use an image other than Ubuntu standard image 2.0, the build fails.
+    #runtime-versions:
+      # name: version
+      # name: version
+    #commands:
+      # - command
+      # - command
+  pre_build:
+    commands:
+       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+       - AWS_REGION=$(aws ec2 describe-availability-zones --output text --query 'AvailabilityZones[0].[RegionName]')
+       - ECR_URL="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+       - ECR_PATH="$ECR_URL/$ECR_REPO_NAME"
+  build:
+    commands:
+       - pwd
+       - cd java
+       - VERSION=$(grep "version =" build.gradle | awk -F"'" '{print $2}')
+       - gradle clean build
+       - find build/libs/ -type f \( -name "*.jar" -not -name "*sources.jar" \) -exec cp {} ../docker/app.jar \;
+  post_build:
+    commands:
+       - login_password=$(aws ecr get-login-password --region $AWS_REGION)
+       - docker login --username AWS -p $login_password $ECR_URL/$ECR_REPO_NAME
+       - cd ../docker
+       # bypassing Dockerhub limits
+       - sed -i 's/openjdk:slim/628880123822.dkr.ecr.eu-central-1.amazonaws.com\/openjdk:slim/g' Dockerfile
+       - docker build -t $ECR_REPO_NAME:$VERSION .
+       - docker tag $ECR_REPO_NAME:$VERSION $ECR_PATH:$VERSION
+       - docker push $ECR_PATH:$VERSION
+#reports:
+  #report-name-or-arn:
+    #files:
+      # - location
+      # - location
+    #base-directory: location
+    #discard-paths: yes
+    #file-format: JunitXml | CucumberJson
+#artifacts:
+  #files:
+    # - location
+    # - location
+  #name: $(date +%Y-%m-%d)
+  #discard-paths: yes
+  #base-directory: location
+#cache:
+  #paths:
+    # - paths
