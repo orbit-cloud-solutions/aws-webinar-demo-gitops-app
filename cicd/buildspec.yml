@@ -30,25 +30,9 @@ phases:
       # - command
   pre_build:
     commands:
-       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
        - AWS_REGION=$(aws ec2 describe-availability-zones --output text --query 'AvailabilityZones[0].[RegionName]')
-       - ECR_URL="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
-       - ECR_PATH="$ECR_URL/$ECR_REPO_NAME"
-       - |
-          echo "Checking if ECR repository for application $ECR_REPO_NAME exists."
-          aws ecr describe-repositories --registry-id $AWS_ACCOUNT_ID --repository-name $ECR_REPO_NAME  > /dev/null
-
-          if [ $? -gt 0 ] 
-          then    
-              echo "ECR repository doesn't exists."
-              echo "Creating ECR repository $ECR_REPO_NAME"
-              aws ecr create-repository --repository-name $ECR_REPO_NAME > /dev/null
-          else
-              echo "ECR repository exists."    
-          fi
   build:
     commands:
-       - pwd
        - cd java
        - VERSION=$(grep "version =" build.gradle | awk -F"'" '{print $2}')
        - gradle clean build
@@ -56,11 +40,11 @@ phases:
   post_build:
     commands:
        - login_password=$(aws ecr get-login-password --region $AWS_REGION)
-       - docker login --username AWS -p $login_password $ECR_URL/$ECR_REPO_NAME
+       - docker login --username AWS -p $login_password $ECR_URI
        - cd ../docker
-       - docker build -t $ECR_REPO_NAME:$VERSION .
-       - docker tag $ECR_REPO_NAME:$VERSION $ECR_PATH:$VERSION
-       - docker push $ECR_PATH:$VERSION
+       - docker build -t java_app:$VERSION .
+       - docker tag java_app:$VERSION $ECR_URI:$VERSION
+       - docker push $ECR_URI:$VERSION
 #reports:
   #report-name-or-arn:
     #files:

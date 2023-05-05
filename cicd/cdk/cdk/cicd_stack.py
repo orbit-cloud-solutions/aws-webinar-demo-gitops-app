@@ -5,6 +5,9 @@ from aws_cdk import (
     aws_codepipeline_actions as codepipeline_actions,
     aws_codebuild as codebuild,
     aws_iam as iam,
+    aws_ecr as ecr,
+    CfnOutput,
+    RemovalPolicy,
 )
 from constructs import Construct
 
@@ -86,6 +89,25 @@ class CiCdStack(Stack):
 
         source_output = codepipeline.Artifact()
 
+        ecr_repo = ecr.Repository(self, conf["prefix"]+"repo",
+                    repository_name=conf["prefix"]+"repo",
+                    image_scan_on_push=True,
+                    removal_policy=RemovalPolicy.DESTROY
+                    )
+        
+        # Add a lifecycle policy to remove untagged images
+        ecr_repo.add_lifecycle_rule(
+            max_image_age=Duration.days(1),
+            tag_status=ecr.TagStatus.UNTAGGED
+        )
+
+        # Output the ECR repository URI
+        CfnOutput(
+            self,
+            "ECRRepoURI",
+            value=ecr_repo.repository_uri
+        )
+
         source_action = codepipeline_actions.CodeStarConnectionsSourceAction(
             action_name="Github_Source",
             owner=conf["github"]["owner"],
@@ -101,7 +123,7 @@ class CiCdStack(Stack):
                 build_image=codebuild.LinuxBuildImage.AMAZON_LINUX_2_4, privileged=True
             ),
             environment_variables={
-                "ECR_REPO_NAME": codebuild.BuildEnvironmentVariable(value=conf["ecr_repo_name"])
+                "ECR_REPO_NAME": codebuild.BuildEnvironmentVariable(value=ecr_repo.repository_uri)
             },
             timeout=Duration.minutes(20)
         )
