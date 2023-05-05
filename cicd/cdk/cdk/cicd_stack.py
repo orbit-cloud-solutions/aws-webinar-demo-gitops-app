@@ -123,7 +123,7 @@ class CiCdStack(Stack):
                 build_image=codebuild.LinuxBuildImage.AMAZON_LINUX_2_4, privileged=True
             ),
             environment_variables={
-                "ECR_REPO_NAME": codebuild.BuildEnvironmentVariable(value=ecr_repo.repository_uri)
+                "ECR_URI": codebuild.BuildEnvironmentVariable(value=ecr_repo.repository_uri)
             },
             timeout=Duration.minutes(20)
         )
