@@ -87,11 +87,10 @@ class CiCdStack(Stack):
 
         source_action = codepipeline_actions.CodeStarConnectionsSourceAction(
             action_name="Github_Source",
-            owner=conf["environment"]["owner"],
-            repo=conf["environment"]["repo"],
+            owner=conf["github"]["owner"],
+            repo=conf["github"]["repo"],
             output=source_output,
-            connection_arn=conf["environment"]["codestar-connection"]
-            action_name="SourceBE",
+            connection_arn=conf["github"]["codestar-connection"],
         )
 
         build_project = codebuild.PipelineProject(self, "CodeBuildAppBuild",
