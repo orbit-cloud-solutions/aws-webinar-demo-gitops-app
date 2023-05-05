@@ -2,7 +2,6 @@ version: 0.2
 
 env:
   variables:
-      ECR_REPO_NAME: "aws-webinar-demo-gitops"
      # key: "value"
   #parameter-store:
      # key: "value"
@@ -35,6 +34,18 @@ phases:
        - AWS_REGION=$(aws ec2 describe-availability-zones --output text --query 'AvailabilityZones[0].[RegionName]')
        - ECR_URL="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
        - ECR_PATH="$ECR_URL/$ECR_REPO_NAME"
+       - |
+          echo "Checking if ECR repository for application $ECR_REPO_NAME exists."
+          aws ecr describe-repositories --registry-id $AWS_ACCOUNT_ID --repository-name $ECR_REPO_NAME  > /dev/null
+
+          if [ $? -gt 0 ] 
+          then    
+              echo "ECR repository doesn't exists."
+              echo "Creating ECR repository $ECR_REPO_NAME"
+              aws ecr create-repository --repository-name $ECR_REPO_NAME > /dev/null
+          else
+              echo "ECR repository exists."    
+          fi
   build:
     commands:
        - pwd
@@ -47,8 +58,6 @@ phases:
        - login_password=$(aws ecr get-login-password --region $AWS_REGION)
        - docker login --username AWS -p $login_password $ECR_URL/$ECR_REPO_NAME
        - cd ../docker
-       # bypassing Dockerhub limits
-       - sed -i 's/openjdk:slim/628880123822.dkr.ecr.eu-central-1.amazonaws.com\/openjdk:slim/g' Dockerfile
        - docker build -t $ECR_REPO_NAME:$VERSION .
        - docker tag $ECR_REPO_NAME:$VERSION $ECR_PATH:$VERSION
        - docker push $ECR_PATH:$VERSION

@@ -1,4 +1,4 @@
-FROM openjdk:slim
+FROM public.ecr.aws/docker/library/openjdk:slim
 
 EXPOSE 8080
 ADD app.jar app.jar

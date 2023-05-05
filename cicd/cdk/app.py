@@ -12,7 +12,7 @@ app = cdk.App()
 conf = app.node.try_get_context(key="config")
 env = cdk.Environment(account=conf["aws_account"], region=conf["aws_region"])
 
-CiCdStack(app, "CiCdStack",
+CiCdStack(app, conf["prefix"]+"CiCdStack",
         env=env,
         conf=conf,
     )

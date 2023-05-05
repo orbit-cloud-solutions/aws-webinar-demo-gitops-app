@@ -76,7 +76,8 @@ class CiCdStack(Stack):
                 "ecr:ListImages",
                 "ecr:PutImage",
                 "ecr:PutLifecyclePolicy",
-                "ecr:UploadLayerPart"
+                "ecr:UploadLayerPart",
+                "ec2:DescribeAvailabilityZones"
             ],
             resources=[
                 "*",
@@ -94,12 +95,14 @@ class CiCdStack(Stack):
         )
 
         build_project = codebuild.PipelineProject(self, "CodeBuildAppBuild",
-            project_name="BuildJavaApp",
+            project_name=conf["prefix"]+"build",
             build_spec=codebuild.BuildSpec.from_source_filename("cicd/buildspec.yml"),
             environment=codebuild.BuildEnvironment(
                 build_image=codebuild.LinuxBuildImage.AMAZON_LINUX_2_4, privileged=True
             ),
-            environment_variables={"ENVIROMENT": codebuild.BuildEnvironmentVariable(value="common")},
+            environment_variables={
+                "ECR_REPO_NAME": codebuild.BuildEnvironmentVariable(value=conf["ecr_repo_name"])
+            },
             timeout=Duration.minutes(20)
         )
 
@@ -110,7 +113,7 @@ class CiCdStack(Stack):
         )
 
         self.codepipeline_project = codepipeline.Pipeline(self, "BuildJavaApp",
-                                            pipeline_name="BuildJavaApp",
+                                            pipeline_name=conf["prefix"]+"build",
                                             stages=[codepipeline.StageProps(stage_name="Source", actions=[source_action]),
                                                     codepipeline.StageProps(stage_name="Build", actions=[build_action])]
                                             )
