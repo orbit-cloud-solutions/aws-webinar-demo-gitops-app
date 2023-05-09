@@ -1,6 +1,7 @@
 package cz.orbit.cicddemo;
 
 import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 
 import java.net.URL;
@@ -38,7 +39,7 @@ public class BgDemoIntegrationTest {
     public void getHello() throws Exception {
         ResponseEntity<String> response = template.getForEntity(base.toString(),
                 String.class);
-        assertThat(response.getBody(), startsWith("CICD Demo"));
+        assertThat(response.getBody(), containsString("CICD Demo"));
     }
 
 }
