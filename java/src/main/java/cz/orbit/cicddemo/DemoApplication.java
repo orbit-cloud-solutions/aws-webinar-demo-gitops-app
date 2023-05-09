@@ -22,11 +22,21 @@ public class DemoApplication {
 
 
     @RequestMapping("/")
-    public String hello(@RequestHeader HttpHeaders headers){
-        
+    public ResponseEntity<String> hello(@RequestHeader HttpHeaders headers){
+
         logger.info("Request logging: " + headers.toString() );
 
-        return "CICD Demo: version =  "+buildProperties.getVersion();
+        String backgroundColor = System.getenv("BACKGROUND_COLOR");
+        if (backgroundColor == null) {
+            backgroundColor = "#f0f0f0"; // Default to light gray if the environment variable is not set
+        }
+
+        String responseBody = "<html><body style=\"background-color:" + backgroundColor + ";\"><div style=\"text-align:center;font-size:36px;font-weight:bold;\">CICD Demo</div><div style=\"text-align:center;font-size:24px;\">Version: "+buildProperties.getVersion()+"</div></body></html>";
+        
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(MediaType.TEXT_HTML);
+        
+        return new ResponseEntity<>(responseBody, responseHeaders, HttpStatus.OK);
     }
 
     public static void main(final String[] args) {
