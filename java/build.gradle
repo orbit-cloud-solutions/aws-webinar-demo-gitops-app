@@ -11,7 +11,7 @@ springBoot {
 apply plugin: 'io.spring.dependency-management'
 
 group = 'cz.orbit.cicddemo'
-version = '0.3'
+version = '0.4'
 sourceCompatibility = '1.8'
 
 repositories {
